@@ -9,7 +9,7 @@ const RANK_LABELS: Record<string, string> = {
 }
 const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
 
-const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren', 'givyceo']
+const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren']
 
 function getRandomCaptcha() {
   return CAPTCHAS[Math.floor(Math.random() * CAPTCHAS.length)]
@@ -58,7 +58,7 @@ export default function Home() {
       return
     }
     if (!avatarFile) {
-      setError('Mana avatarnya?🙄')
+      setError('Upload avatar dulu bro, wajib nih!')
       return
     }
     setError(null)
@@ -258,7 +258,7 @@ export default function Home() {
               </>
             )}
           </div>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} />
+          <input ref={fileInputRef} type="file" onChange={handleFileChange} />
         </section>
 
         <section className="panel rounded-xl p-3 gold-border">
