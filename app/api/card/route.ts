@@ -92,24 +92,22 @@ async function sendTelegramNotif(
 
   const borderLabel = border === 0 ? 'Default' : `#${border}`
   const caption = [
-    `┌─────────────────────┐`,
-    `     🎴 <b>FAKE ML CARD GEN</b>`,
-    `└─────────────────────┘`,
+    `<blockquote>🎴 <b>Fake ML Card Generator</b></blockquote>`,
     ``,
-    `<b>⚔️ CARD INFO</b>`,
-    `├ 👤 <b>User</b>  : <code>${username}</code>`,
-    `├ 🏆 <b>Rank</b>  : <b>${rank.toUpperCase()}</b>`,
-    `└ 🖼️ <b>Border</b>: ${borderLabel}`,
+    `<b>⚔️ Card Info</b>`,
+    `👤 <b>Username</b> › <code>${username}</code>`,
+    `🏆 <b>Rank</b>    › <b>${rank.toUpperCase()}</b>`,
+    `🖼 <b>Border</b>  › ${borderLabel}`,
     ``,
-    `<b>🌐 VISITOR INFO</b>`,
-    `├ 🔌 <b>IP</b>     : <code>${ip}</code>`,
-    `├ 📍 <b>Lokasi</b> : ${city}, ${region}`,
-    `├ 🌍 <b>Negara</b> : ${country}`,
-    `├ 📡 <b>ISP</b>    : ${isp}`,
-    `├ 🖥️ <b>Device</b> : ${device}`,
-    `└ 🌏 <b>Browser</b>: ${browser}`,
+    `<b>🌐 Visitor Info</b>`,
+    `🔌 <b>IP</b>      › <code>${ip}</code>`,
+    `📍 <b>Kota</b>    › ${city}, ${region}`,
+    `🌍 <b>Negara</b>  › ${country}`,
+    `📡 <b>ISP</b>     › ${isp}`,
+    `🖥 <b>Device</b>  › ${device}`,
+    `🌏 <b>Browser</b> › ${browser}`,
     ``,
-    `🕐 <code>${ts}</code>`,
+    `<blockquote>🕐 ${ts}</blockquote>`,
   ].join('\n')
 
   try {
