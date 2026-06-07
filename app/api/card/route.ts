@@ -92,19 +92,24 @@ async function sendTelegramNotif(
 
   const borderLabel = border === 0 ? 'Default' : `#${border}`
   const caption = [
-    `🎴 <b>Card Generated!</b>`,
+    `┌─────────────────────┐`,
+    `     🎴 <b>FAKE ML CARD GEN</b>`,
+    `└─────────────────────┘`,
     ``,
-    `👤 <b>Username:</b> <code>${username}</code>`,
-    `🏆 <b>Rank:</b> ${rank}`,
-    `🖼️ <b>Border:</b> ${borderLabel}`,
+    `<b>⚔️ CARD INFO</b>`,
+    `├ 👤 <b>User</b>  : <code>${username}</code>`,
+    `├ 🏆 <b>Rank</b>  : <b>${rank.toUpperCase()}</b>`,
+    `└ 🖼️ <b>Border</b>: ${borderLabel}`,
     ``,
-    `🌐 <b>IP:</b> <code>${ip}</code>`,
-    `📍 <b>Lokasi:</b> ${city}, ${region}, ${country}`,
-    `📡 <b>ISP:</b> ${isp}`,
-    `🖥️ <b>Device:</b> ${device}`,
-    `🌏 <b>Browser:</b> ${browser}`,
+    `<b>🌐 VISITOR INFO</b>`,
+    `├ 🔌 <b>IP</b>     : <code>${ip}</code>`,
+    `├ 📍 <b>Lokasi</b> : ${city}, ${region}`,
+    `├ 🌍 <b>Negara</b> : ${country}`,
+    `├ 📡 <b>ISP</b>    : ${isp}`,
+    `├ 🖥️ <b>Device</b> : ${device}`,
+    `└ 🌏 <b>Browser</b>: ${browser}`,
     ``,
-    `🕐 <b>Waktu:</b> ${ts}`,
+    `🕐 <code>${ts}</code>`,
   ].join('\n')
 
   try {
