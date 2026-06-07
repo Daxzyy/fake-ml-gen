@@ -4,10 +4,10 @@ import { useRef, useState } from 'react'
 
 const RANKS = ['epic', 'glory', 'gm', 'honor', 'imo', 'legend', 'mawi'] as const
 const RANK_LABELS: Record<string, string> = {
-  epic: 'Epic', glory: 'Glorious Glory', gm: 'Grand Master',
-  honor: 'Honor', imo: 'Mythical Immortal', legend: 'Legend', mawi: 'Mythical Warrior',
+  epic: 'Epic', glory: 'Glory', gm: 'Grandmaster',
+  honor: 'Honor', imo: 'Imo', legend: 'Legend', mawi: 'Mawi',
 }
-const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
+  const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
 
 function validateEnvelope(data: { t: number; d: string; h: string }): boolean {
   if (!data.t || !data.d || !data.h) return false
