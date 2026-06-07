@@ -33,6 +33,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [resultImg, setResultImg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
   const [captcha, setCaptcha] = useState<string>(getRandomCaptcha)
   const [captchaInput, setCaptchaInput] = useState('')
   const [captchaError, setCaptchaError] = useState<string | null>(null)
@@ -51,21 +52,29 @@ export default function Home() {
     reader.readAsDataURL(file)
   }
 
-  async function handleGenerate() {
+  function handleClickGenerate() {
     if (!username.trim()) {
       setError('Masukkan username terlebih dahulu.')
       return
     }
+    setError(null)
+    setCaptcha(getRandomCaptcha())
+    setCaptchaInput('')
+    setCaptchaError(null)
+    setShowModal(true)
+  }
 
+  async function handleModalConfirm() {
     if (captchaInput.trim().toLowerCase() !== captcha) {
-      setCaptchaError('Salah bro 💀 emang beneran ga mau ngakuin givy ganteng?')
+      setCaptchaError('Salah bro 💀 masa ga mau ngakuin sih??')
       setCaptcha(getRandomCaptcha())
       setCaptchaInput('')
       return
     }
 
+    setShowModal(false)
     setCaptchaError(null)
-    setError(null)
+    setCaptchaInput('')
     setLoading(true)
     setResultImg(null)
 
@@ -95,8 +104,6 @@ export default function Home() {
       }
 
       setResultImg(data.d)
-      setCaptcha(getRandomCaptcha())
-      setCaptchaInput('')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Gagal generate card.')
     } finally {
@@ -127,6 +134,69 @@ export default function Home() {
             }} />
         ))}
       </div>
+
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}
+        >
+          <div className="panel rounded-2xl p-5 w-full max-w-sm gold-border flex flex-col gap-3"
+            style={{ boxShadow: '0 0 40px rgba(201,168,76,0.2)' }}>
+            <div className="text-center">
+              <p className="text-lg font-bold" style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)' }}>
+                Verifikasi Dulu 🤨
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                Buktiin kalo lu manusia yang jujur
+              </p>
+            </div>
+            <div className="divider" />
+            <p className="text-sm text-center" style={{ color: 'var(--text-primary)' }}>
+              Ketik: <span style={{ color: 'var(--gold)', fontWeight: 700 }}>"{captcha}"</span>
+            </p>
+            <input
+              autoFocus
+              type="text"
+              value={captchaInput}
+              onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(null) }}
+              onKeyDown={e => { if (e.key === 'Enter') handleModalConfirm() }}
+              placeholder={captcha}
+              className="w-full rounded-lg px-3 py-2 text-sm outline-none text-center"
+              style={{
+                background: 'rgba(5,13,26,0.8)',
+                border: `1px solid ${captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)'}`,
+                color: 'var(--text-primary)',
+                fontFamily: 'Rajdhani, sans-serif',
+              }}
+            />
+            {captchaError && (
+              <p className="text-xs text-center" style={{ color: '#f88' }}>
+                {captchaError}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 rounded-xl py-2 text-xs"
+                style={{
+                  background: 'rgba(5,13,26,0.8)',
+                  border: '1px solid var(--blue-border)',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleModalConfirm}
+                className="btn-gold flex-1 rounded-xl py-2 text-xs"
+              >
+                Lanjut →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <header className="relative z-10 pt-5 pb-2 text-center">
         <div className="inline-flex items-center gap-2 mb-1">
@@ -286,34 +356,6 @@ export default function Home() {
           </p>
         </section>
 
-        <section className="panel rounded-xl p-3 gold-border">
-          <p className="section-title mb-1">Verifikasi Kemanusiaan 🤖</p>
-          <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
-            Ketik <span style={{ color: 'var(--gold)', fontWeight: 700 }}>"{captcha}"</span> untuk lanjut
-          </p>
-          <input
-            type="text"
-            value={captchaInput}
-            onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(null) }}
-            placeholder={`ketik: ${captcha}`}
-            className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all"
-            style={{
-              background: 'rgba(5,13,26,0.8)',
-              border: `1px solid ${captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)'}`,
-              color: 'var(--text-primary)',
-              fontFamily: 'Rajdhani, sans-serif',
-              fontSize: '0.9rem',
-            }}
-            onFocus={e => (e.target.style.borderColor = captchaError ? 'rgba(180,40,40,0.6)' : 'var(--gold-dark)')}
-            onBlur={e => (e.target.style.borderColor = captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)')}
-          />
-          {captchaError && (
-            <p className="text-xs mt-1.5" style={{ color: '#f88' }}>
-              💀 {captchaError}
-            </p>
-          )}
-        </section>
-
         {error && (
           <div className="rounded-lg px-3 py-2 text-xs"
             style={{ background: 'rgba(180,40,40,0.15)', border: '1px solid rgba(180,40,40,0.4)', color: '#f88' }}>
@@ -322,7 +364,7 @@ export default function Home() {
         )}
 
         <button
-          onClick={handleGenerate}
+          onClick={handleClickGenerate}
           disabled={loading}
           className="btn-gold rounded-xl py-3 text-sm w-full"
           style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'wait' : 'pointer' }}
