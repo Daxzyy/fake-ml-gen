@@ -222,7 +222,7 @@ export default function Home() {
         <div className="divider max-w-sm mx-auto mt-3" />
       </header>
 
-      <main className="relative z-10 flex-1 w-full max-w-2xl mx-auto px-3 py-4 flex flex-col gap-3">
+      <main className="relative z-10 flex-1 w-full max-w-2xl mx-auto px-6 py-4 flex flex-col gap-3">
 
         <section className="panel rounded-xl p-3 gold-border"
           style={{ border: !avatarFile ? '1px solid rgba(201,168,76,0.5)' : undefined }}>
