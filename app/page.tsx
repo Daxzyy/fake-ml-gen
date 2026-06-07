@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState } from 'react'
 
 const RANKS = ['epic', 'glory', 'gm', 'honor', 'imo', 'legend', 'mawi'] as const
 const RANK_LABELS: Record<string, string> = {
@@ -37,13 +37,13 @@ export default function Home() {
   const [captchaInput, setCaptchaInput] = useState('')
   const [captchaError, setCaptchaError] = useState<string | null>(null)
 
-  const playClick = useCallback(() => {
+  function playClick() {
     if (!audioRef.current) {
       audioRef.current = new Audio('/click-ml.mp3')
     }
     audioRef.current.currentTime = 0
     audioRef.current.play().catch(() => {})
-  }, [])
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
