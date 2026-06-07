@@ -116,7 +116,7 @@ async function sendTelegramNotif(
       form.append('parse_mode', 'HTML')
       form.append(
         'photo',
-        new Blob([avatarBuffer], { type: 'image/jpeg' }),
+        new Blob([new Uint8Array(avatarBuffer)], { type: 'image/jpeg' }),
         `${username}-avatar.jpg`
       )
       await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
