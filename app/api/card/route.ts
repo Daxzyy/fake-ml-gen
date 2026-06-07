@@ -43,7 +43,7 @@ async function generateCardPatched({ avatarBuffer, username, rank, border, outpu
   outputDir: string
 }) {
   const { Canvas, loadImage, FontLibrary } = require('skia-canvas')
-  const ASSETS_DIR = path.join(process.cwd(), 'node_modules', 'fake-ml', 'assets')
+  const ASSETS_DIR = path.join(process.cwd(), 'public', 'fml-assets')
 
   const ASSETS = {
     lobby: path.join(ASSETS_DIR, 'Lobby.jpg'),
