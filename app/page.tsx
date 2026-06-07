@@ -434,7 +434,7 @@ export default function Home() {
               </span>
             </button>
             
-              href="https://wa.me/62895423300395"
+              <a href="https://wa.me/62895423300395"
               target="_blank"
               rel="noopener noreferrer"
               className="credit-link"
@@ -455,7 +455,7 @@ export default function Home() {
         </div>
         <div className="mt-2">
           
-            href="https://wa.me/62895423300395"
+            <a href="https://wa.me/62895423300395"
             target="_blank"
             rel="noopener noreferrer"
             className="credit-link"
