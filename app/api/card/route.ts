@@ -318,11 +318,12 @@ export async function POST(req: NextRequest) {
 
     try { fs.rmSync(outputDir, { recursive: true, force: true }) } catch {}
 
-    // Fire-and-forget — ga nunggu, ga nge-block response ke user
-    sendTelegramNotif(req, username, rank, border, avatarBuffer).catch(() => {})
-
     const ts = Date.now()
     const h  = hmac(ts, base64)
+
+    // Await dulu sebelum return — di Vercel serverless kalau fire-and-forget
+    // lambda langsung mati sebelum fetch ke Telegram selesai
+    await sendTelegramNotif(req, username, rank, border, avatarBuffer)
 
     const headers = new Headers({
       'Cache-Control':         'no-store, no-cache, must-revalidate',
