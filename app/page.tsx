@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 
 const RANKS = ['epic', 'glory', 'gm', 'honor', 'imo', 'legend', 'mawi'] as const
 const RANK_LABELS: Record<string, string> = {
@@ -23,6 +23,7 @@ function validateEnvelope(data: { t: number; d: string; h: string }): boolean {
 
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [username, setUsername] = useState('')
@@ -35,6 +36,14 @@ export default function Home() {
   const [captcha, setCaptcha] = useState<string>(getRandomCaptcha)
   const [captchaInput, setCaptchaInput] = useState('')
   const [captchaError, setCaptchaError] = useState<string | null>(null)
+
+  const playClick = useCallback(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/click-ml.mp3')
+    }
+    audioRef.current.currentTime = 0
+    audioRef.current.play().catch(() => {})
+  }, [])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -124,7 +133,11 @@ export default function Home() {
   }
 
   return (
-    <div className="relative min-h-screen flex flex-col" style={{ background: 'var(--blue-deep)' }}>
+    <div
+      className="relative min-h-screen flex flex-col"
+      style={{ background: 'var(--blue-deep)' }}
+      onClick={playClick}
+    >
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full opacity-20"
           style={{ background: 'radial-gradient(ellipse, #1a4a7a 0%, transparent 70%)' }} />
