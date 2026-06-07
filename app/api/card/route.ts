@@ -103,22 +103,24 @@ async function generateCardPatched({ avatarBuffer, username, rank, border, outpu
   ctx.drawImage(lobbyImg, 0, 0, width, height)
 
   const { x, y, size, borderRadius } = config.avatar
-  const avatarHeight = size * (avatarImgLoaded.height / avatarImgLoaded.width)
+  const sw = Math.min(avatarImgLoaded.width, avatarImgLoaded.height)
+const sx = (avatarImgLoaded.width - sw) / 2
+const sy = (avatarImgLoaded.height - sw) / 2
 
-  ctx.save()
-  if (!useBorder) {
-    const { color, thickness } = config.outline
-    ctx.beginPath()
-    ctx.roundRect(x - thickness, y - thickness, size + thickness * 2, avatarHeight + thickness * 2, borderRadius + thickness)
-    ctx.strokeStyle = color
-    ctx.lineWidth = thickness * 2
-    ctx.stroke()
-  }
+ctx.save()
+if (!useBorder) {
+  const { color, thickness } = config.outline
   ctx.beginPath()
-  ctx.roundRect(x, y, size, avatarHeight, borderRadius)
-  ctx.clip()
-  ctx.drawImage(avatarImgLoaded, x, y, size, avatarHeight)
-  ctx.restore()
+  ctx.roundRect(x - thickness, y - thickness, size + thickness * 2, size + thickness * 2, borderRadius + thickness)
+  ctx.strokeStyle = color
+  ctx.lineWidth = thickness * 2
+  ctx.stroke()
+}
+ctx.beginPath()
+ctx.roundRect(x, y, size, size, borderRadius)
+ctx.clip()
+ctx.drawImage(avatarImgLoaded, sx, sy, sw, sw, x, y, size, size)
+ctx.restore()
 
   if (useBorder) {
     const offset = BORDER_OFFSET[border] ?? 26
