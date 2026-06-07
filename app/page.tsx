@@ -38,12 +38,12 @@ export default function Home() {
   const [captchaError, setCaptchaError] = useState<string | null>(null)
 
   function playClick() {
-    if (!audioRef.current) {
-      audioRef.current = new Audio('/click-ml.mp3')
-    }
-    audioRef.current.currentTime = 0
-    audioRef.current.play().catch(() => {})
+  if (!audioRef.current) {
+    audioRef.current = new Audio('/click-ml.mp3')
   }
+  const sound = audioRef.current.cloneNode() as HTMLAudioElement
+  sound.play().catch(() => {})
+}
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
