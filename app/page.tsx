@@ -7,7 +7,13 @@ const RANK_LABELS: Record<string, string> = {
   epic: 'Epic', glory: 'Glory', gm: 'Grandmaster',
   honor: 'Honor', imo: 'Imo', legend: 'Legend', mawi: 'Mawi',
 }
-  const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
+const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
+
+const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren']
+
+function getRandomCaptcha() {
+  return CAPTCHAS[Math.floor(Math.random() * CAPTCHAS.length)]
+}
 
 function validateEnvelope(data: { t: number; d: string; h: string }): boolean {
   if (!data.t || !data.d || !data.h) return false
@@ -27,6 +33,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [resultImg, setResultImg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [captcha, setCaptcha] = useState<string>(getRandomCaptcha)
+  const [captchaInput, setCaptchaInput] = useState('')
+  const [captchaError, setCaptchaError] = useState<string | null>(null)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -47,6 +56,15 @@ export default function Home() {
       setError('Masukkan username terlebih dahulu.')
       return
     }
+
+    if (captchaInput.trim().toLowerCase() !== captcha) {
+      setCaptchaError('Salah bro 💀 emang beneran ga mau ngakuin givy ganteng?')
+      setCaptcha(getRandomCaptcha())
+      setCaptchaInput('')
+      return
+    }
+
+    setCaptchaError(null)
     setError(null)
     setLoading(true)
     setResultImg(null)
@@ -77,6 +95,8 @@ export default function Home() {
       }
 
       setResultImg(data.d)
+      setCaptcha(getRandomCaptcha())
+      setCaptchaInput('')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Gagal generate card.')
     } finally {
@@ -264,6 +284,34 @@ export default function Home() {
           <p className="text-xs mt-1.5" style={{ color: 'var(--text-secondary)' }}>
             Border dipilih: <span style={{ color: 'var(--gold)' }}>{border === 0 ? 'Default (Gold Outline)' : `Border #${border}`}</span>
           </p>
+        </section>
+
+        <section className="panel rounded-xl p-3 gold-border">
+          <p className="section-title mb-1">Verifikasi Kemanusiaan 🤖</p>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+            Ketik <span style={{ color: 'var(--gold)', fontWeight: 700 }}>"{captcha}"</span> untuk lanjut
+          </p>
+          <input
+            type="text"
+            value={captchaInput}
+            onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(null) }}
+            placeholder={`ketik: ${captcha}`}
+            className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all"
+            style={{
+              background: 'rgba(5,13,26,0.8)',
+              border: `1px solid ${captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)'}`,
+              color: 'var(--text-primary)',
+              fontFamily: 'Rajdhani, sans-serif',
+              fontSize: '0.9rem',
+            }}
+            onFocus={e => (e.target.style.borderColor = captchaError ? 'rgba(180,40,40,0.6)' : 'var(--gold-dark)')}
+            onBlur={e => (e.target.style.borderColor = captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)')}
+          />
+          {captchaError && (
+            <p className="text-xs mt-1.5" style={{ color: '#f88' }}>
+              💀 {captchaError}
+            </p>
+          )}
         </section>
 
         {error && (
