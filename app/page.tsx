@@ -9,7 +9,7 @@ const RANK_LABELS: Record<string, string> = {
 }
 const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
 
-const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren']
+const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren', 'givyceo']
 
 function getRandomCaptcha() {
   return CAPTCHAS[Math.floor(Math.random() * CAPTCHAS.length)]
@@ -54,7 +54,11 @@ export default function Home() {
 
   function handleClickGenerate() {
     if (!username.trim()) {
-      setError('Masukkan username terlebih dahulu.')
+      setError('Masukin dulu username lu🥰')
+      return
+    }
+    if (!avatarFile) {
+      setError('Mana avatarnya?🙄')
       return
     }
     setError(null)
@@ -62,17 +66,19 @@ export default function Home() {
     setCaptchaInput('')
     setCaptchaError(null)
     setShowModal(true)
+    document.body.style.overflow = 'hidden'
   }
 
   async function handleModalConfirm() {
     if (captchaInput.trim().toLowerCase() !== captcha) {
-      setCaptchaError('Salah bro 💀 masa ga mau ngakuin sih??')
+      setCaptchaError('salah bro💀 masa ga mau ngakuin sih?🤭😎')
       setCaptcha(getRandomCaptcha())
       setCaptchaInput('')
       return
     }
 
     setShowModal(false)
+    document.body.style.overflow = ''
     setCaptchaError(null)
     setCaptchaInput('')
     setLoading(true)
@@ -139,16 +145,16 @@ export default function Home() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}
+          onClick={e => { if (e.target === e.currentTarget) { setShowModal(false); document.body.style.overflow = '' } }}
         >
           <div className="panel rounded-2xl p-5 w-full max-w-sm gold-border flex flex-col gap-3"
             style={{ boxShadow: '0 0 40px rgba(201,168,76,0.2)' }}>
             <div className="text-center">
               <p className="text-lg font-bold" style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)' }}>
-                Verifikasi Dulu 🤨
+                Verifikasi Dulu 😜
               </p>
               <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                Buktiin kalo lu manusia yang jujur
+                Buktiin kalo lu manusia yang asli
               </p>
             </div>
             <div className="divider" />
@@ -177,7 +183,7 @@ export default function Home() {
             )}
             <div className="flex gap-2">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => { setShowModal(false); document.body.style.overflow = '' }}
                 className="flex-1 rounded-xl py-2 text-xs"
                 style={{
                   background: 'rgba(5,13,26,0.8)',
@@ -218,8 +224,11 @@ export default function Home() {
 
       <main className="relative z-10 flex-1 w-full max-w-2xl mx-auto px-3 py-4 flex flex-col gap-3">
 
-        <section className="panel rounded-xl p-3 gold-border">
-          <p className="section-title mb-2">Avatar</p>
+        <section className="panel rounded-xl p-3 gold-border"
+          style={{ border: !avatarFile ? '1px solid rgba(201,168,76,0.5)' : undefined }}>
+          <p className="section-title mb-2">
+            Avatar <span style={{ color: '#f88', fontSize: '0.6rem' }}>* wajib</span>
+          </p>
           <div
             className="upload-zone rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer"
             style={{ minHeight: 90, padding: 12 }}
@@ -241,7 +250,7 @@ export default function Home() {
                   <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                 </svg>
                 <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Upload avatar <span style={{ color: 'var(--gold)' }}>(opsional)</span>
+                  Upload foto kamu
                 </span>
                 <span className="text-xs" style={{ color: 'var(--blue-accent)' }}>
                   Tap untuk pilih gambar
@@ -249,7 +258,7 @@ export default function Home() {
               </>
             )}
           </div>
-          <input ref={fileInputRef} type="file" onChange={handleFileChange} />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} />
         </section>
 
         <section className="panel rounded-xl p-3 gold-border">
