@@ -17,8 +17,6 @@ function getRandomCaptcha() {
 
 function validateEnvelope(data: { t: number; d: string; h: string }): boolean {
   if (!data.t || !data.d || !data.h) return false
-  const age = Date.now() - data.t
-  if (age > 30_000) return false
   if (!data.d.startsWith('data:image/png;base64,')) return false
   return true
 }
@@ -106,7 +104,7 @@ export default function Home() {
       const data = await res.json()
 
       if (!validateEnvelope(data)) {
-        throw new Error('Response tidak valid atau kadaluarsa.')
+        throw new Error('Response tidak valid.')
       }
 
       setResultImg(data.d)
@@ -422,7 +420,7 @@ export default function Home() {
                 Download PNG
               </span>
             </button>
-            <a
+            
               href="https://wa.me/62895423300395"
               target="_blank"
               rel="noopener noreferrer"
@@ -443,7 +441,7 @@ export default function Home() {
           <div className="diamond-icon" style={{ width: 4, height: 4 }} />
         </div>
         <div className="mt-2">
-          <a
+          
             href="https://wa.me/62895423300395"
             target="_blank"
             rel="noopener noreferrer"
