@@ -191,8 +191,8 @@ export default function Home() {
 
       setGenStep(BAR_TOTAL)
       await new Promise(r => setTimeout(r, 600))
-      setResultImg(data.d)
       setLoading(false)
+      setResultImg(data.d)
     } catch (err: unknown) {
       console.error('[FakeML] Generate error:', err)
       setError(err instanceof Error ? err.message : 'Gagal generate card.')
