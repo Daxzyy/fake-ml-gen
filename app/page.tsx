@@ -77,10 +77,10 @@ export default function Home() {
   const [genStep, setGenStep] = useState(0)
   const [resultImg, setResultImg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [captcha] = useState<string>(getRandomCaptcha)
+  const [showModal, setShowModal] = useState(false)
+  const [captcha, setCaptcha] = useState<string>(getRandomCaptcha)
   const [captchaInput, setCaptchaInput] = useState('')
   const [captchaError, setCaptchaError] = useState<string | null>(null)
-  const [captchaPassed, setCaptchaPassed] = useState(false)
 
   useEffect(() => {
     const done = () => {
@@ -135,17 +135,7 @@ export default function Home() {
     reader.readAsDataURL(file)
   }
 
-  function handleCaptchaCheck() {
-    if (captchaInput.trim().toLowerCase() === captcha) {
-      setCaptchaPassed(true)
-      setCaptchaError(null)
-    } else {
-      setCaptchaError('salah bro💀 coba lagi')
-      setCaptchaInput('')
-    }
-  }
-
-  async function handleGenerate() {
+  function handleClickGenerate() {
     if (!username.trim()) {
       setError('Masukin dulu username lu🥰')
       return
@@ -154,12 +144,26 @@ export default function Home() {
       setError('Upload avatar dulu bro, wajib nih!')
       return
     }
-    if (!captchaPassed) {
-      setError('Selesaikan verifikasi dulu ya!')
+    setError(null)
+    setCaptcha(getRandomCaptcha())
+    setCaptchaInput('')
+    setCaptchaError(null)
+    setShowModal(true)
+    document.body.style.overflow = 'hidden'
+  }
+
+  async function handleModalConfirm() {
+    if (captchaInput.trim().toLowerCase() !== captcha) {
+      setCaptchaError('salah bro💀 masa ga mau ngakuin sih?🤭😎')
+      setCaptcha(getRandomCaptcha())
+      setCaptchaInput('')
       return
     }
 
-    setError(null)
+    setShowModal(false)
+    document.body.style.overflow = ''
+    setCaptchaError(null)
+    setCaptchaInput('')
     setLoading(true)
     setResultImg(null)
 
@@ -183,17 +187,11 @@ export default function Home() {
       }
 
       const data = await res.json()
-
-      if (!validateEnvelope(data)) {
-        console.error('[FakeML] Invalid envelope:', JSON.stringify(data).slice(0, 300))
-        throw new Error('Response dari server tidak valid.')
-      }
-
+      if (!validateEnvelope(data)) throw new Error('Response tidak valid.')
       setGenStep(BAR_TOTAL)
       await new Promise(r => setTimeout(r, 350))
       setResultImg(data.d)
     } catch (err: unknown) {
-      console.error('[FakeML] Generate error:', err)
       setError(err instanceof Error ? err.message : 'Gagal generate card.')
     } finally {
       setLoading(false)
@@ -232,6 +230,60 @@ export default function Home() {
               }} />
           ))}
         </div>
+
+        {showModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+            onClick={e => { if (e.target === e.currentTarget) { setShowModal(false); document.body.style.overflow = '' } }}
+          >
+            <div className="panel rounded-2xl p-5 w-full max-w-xs gold-border flex flex-col gap-3"
+              style={{ boxShadow: '0 0 40px rgba(201,168,76,0.2)' }}>
+              <div className="text-center">
+                <p className="text-base font-bold" style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)' }}>
+                  Verifikasi Dulu 😜
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  Buktiin kalo lu manusia yang asli
+                </p>
+              </div>
+              <div className="divider" />
+              <p className="text-sm text-center" style={{ color: 'var(--text-primary)' }}>
+                Ketik: <span style={{ color: 'var(--gold)', fontWeight: 700 }}>"{captcha}"</span>
+              </p>
+              <input
+                autoFocus
+                type="text"
+                value={captchaInput}
+                onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(null) }}
+                onKeyDown={e => { if (e.key === 'Enter') handleModalConfirm() }}
+                placeholder={captcha}
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none text-center"
+                style={{
+                  background: 'rgba(5,13,26,0.8)',
+                  border: `1px solid ${captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)'}`,
+                  color: 'var(--text-primary)',
+                  fontFamily: 'Rajdhani, sans-serif',
+                }}
+              />
+              {captchaError && (
+                <p className="text-xs text-center" style={{ color: '#f88' }}>{captchaError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowModal(false); document.body.style.overflow = '' }}
+                  className="flex-1 rounded-xl py-2 text-xs"
+                  style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid var(--blue-border)', color: 'var(--text-secondary)' }}
+                >
+                  Batal
+                </button>
+                <button onClick={handleModalConfirm} className="btn-gold flex-1 rounded-xl py-2 text-xs">
+                  Lanjut →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <header className="relative z-10 pt-3 pb-2 text-center">
           <div className="inline-flex items-center gap-1 mb-0.5">
@@ -372,54 +424,6 @@ export default function Home() {
             </p>
           </section>
 
-          <section className="panel rounded-xl p-2.5 gold-border">
-            <p className="section-title mb-1.5">Verifikasi</p>
-            {captchaPassed ? (
-              <div className="flex items-center gap-2 py-1.5">
-                <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(80,200,120,0.2)', border: '1px solid rgba(80,200,120,0.5)' }}>
-                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="#50c878" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <span style={{ fontSize: '0.7rem', color: '#50c878' }}>Verified ✓</span>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-xs" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                  Ketik: <span style={{ color: 'var(--gold)', fontWeight: 700 }}>"{captcha}"</span>
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={captchaInput}
-                    onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(null) }}
-                    onKeyDown={e => { if (e.key === 'Enter') handleCaptchaCheck() }}
-                    placeholder={captcha}
-                    className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none"
-                    style={{
-                      background: 'rgba(5,13,26,0.8)',
-                      border: `1px solid ${captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)'}`,
-                      color: 'var(--text-primary)',
-                      fontFamily: 'Rajdhani, sans-serif',
-                      fontSize: '0.8rem',
-                    }}
-                  />
-                  <button
-                    onClick={handleCaptchaCheck}
-                    className="btn-gold rounded-lg px-3 text-xs"
-                    style={{ flexShrink: 0 }}
-                  >
-                    OK
-                  </button>
-                </div>
-                {captchaError && (
-                  <p style={{ fontSize: '0.6rem', color: '#f88' }}>{captchaError}</p>
-                )}
-              </div>
-            )}
-          </section>
-
           {error && (
             <div className="rounded-lg px-3 py-2 text-xs"
               style={{ background: 'rgba(180,40,40,0.15)', border: '1px solid rgba(180,40,40,0.4)', color: '#f88' }}>
@@ -428,10 +432,10 @@ export default function Home() {
           )}
 
           <button
-            onClick={handleGenerate}
-            disabled={loading || !captchaPassed}
+            onClick={handleClickGenerate}
+            disabled={loading}
             className="btn-gold rounded-xl py-2.5 text-sm w-full"
-            style={{ opacity: (loading || !captchaPassed) ? 0.5 : 1, cursor: (loading || !captchaPassed) ? 'not-allowed' : 'pointer' }}
+            style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer' }}
           >
             <span className="flex items-center justify-center gap-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
