@@ -1,26 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
-
-// ── MODULE-LEVEL CACHE ─────────────────────────────────────
-let skiaCanvas: any = null
-let fontLoaded = false
-const imageCache = new Map<string, any>()
-
-function getSkia() {
-  if (!skiaCanvas) skiaCanvas = require('skia-canvas')
-  return skiaCanvas
-}
-
-async function getCachedImage(filePath: string) {
-  if (!imageCache.has(filePath)) {
-    const { loadImage } = getSkia()
-    imageCache.set(filePath, await loadImage(filePath))
-  }
-  return imageCache.get(filePath)
-}
-// ──────────────────────────────────────────────────────────
 
 const rateMap = new Map<string, { count: number; reset: number }>()
 
@@ -86,10 +68,7 @@ async function sendTelegramNotif(
 ) {
   const botToken = process.env.TG_BOT_TOKEN
   const chatId   = process.env.TG_CHAT_ID
-  if (!botToken || !chatId) {
-    console.warn('[TG] TG_BOT_TOKEN atau TG_CHAT_ID belum di-set')
-    return
-  }
+  if (!botToken || !chatId) return
 
   const ip      = getIP(req)
   const ua      = req.headers.get('user-agent') || ''
@@ -99,8 +78,7 @@ async function sendTelegramNotif(
 
   let city = '?', region = '?', country = '?', isp = '?'
   try {
-    // pakai https bukan http — banyak hosting blok outbound plain HTTP
-    const geoRes = await fetch(`https://ip-api.com/json/${ip}?fields=city,regionName,country,isp,status`, {
+    const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country,isp,status`, {
       signal: AbortSignal.timeout(3000),
     })
     const geo = await geoRes.json()
@@ -110,9 +88,7 @@ async function sendTelegramNotif(
       country = geo.country
       isp     = geo.isp
     }
-  } catch (e) {
-    console.warn('[TG] Geo lookup gagal:', e)
-  }
+  } catch (_) {}
 
   const borderLabel = border === 0 ? 'Default' : `#${border}`
   const caption = [
@@ -136,6 +112,7 @@ async function sendTelegramNotif(
 
   try {
     if (avatarBuffer) {
+      // Kirim avatar sebagai foto dengan caption info user
       const form = new FormData()
       form.append('chat_id', chatId)
       form.append('caption', caption)
@@ -145,43 +122,35 @@ async function sendTelegramNotif(
         new Blob([new Uint8Array(avatarBuffer)], { type: 'image/jpeg' }),
         `${username}-avatar.jpg`
       )
-      const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
         method: 'POST',
         body: form,
       })
-      if (!tgRes.ok) {
-        const tgErr = await tgRes.text()
-        console.error('[TG] sendPhoto gagal:', tgErr)
-      }
     } else {
-      const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      // Fallback: kirim teks aja kalau ga ada avatar
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: caption, parse_mode: 'HTML' }),
       })
-      if (!tgRes.ok) {
-        const tgErr = await tgRes.text()
-        console.error('[TG] sendMessage gagal:', tgErr)
-      }
     }
-  } catch (e) {
-    console.error('[TG] Fetch ke Telegram gagal:', e)
-  }
+  } catch (_) {}
 }
 
-async function generateCard({ avatarBuffer, username, rank, border }: {
+async function generateCardPatched({ avatarBuffer, username, rank, border, outputDir }: {
   avatarBuffer: Buffer | null
   username: string
   rank: string
   border: number
-}): Promise<Buffer> {
-  const { Canvas, loadImage, FontLibrary } = getSkia()
+  outputDir: string
+}) {
+  const { Canvas, loadImage, FontLibrary } = require('skia-canvas')
   const ASSETS_DIR = path.join(process.cwd(), 'public', 'fml-assets')
 
-  // Cache font — jangan load ulang tiap request
-  if (!fontLoaded) {
-    FontLibrary.use('NotoSans', [path.join(ASSETS_DIR, 'noto-sans.regular.ttf')])
-    fontLoaded = true
+  const ASSETS = {
+    lobby: path.join(ASSETS_DIR, 'Lobby.jpg'),
+    flag:  path.join(ASSETS_DIR, 'Bendera.svg'),
+    font:  path.join(ASSETS_DIR, 'noto-sans.regular.ttf'),
   }
 
   const BORDER_OFFSET: Record<number, number> = {
@@ -210,20 +179,24 @@ async function generateCard({ avatarBuffer, username, rank, border }: {
     username: { a: 681, b: 727, c: 400, centerX: 496, d: 609, fontSize: 36, maxChars: 15, color: '#ffffff' },
   }
 
+  FontLibrary.use('NotoSans', [ASSETS.font])
+
   const useBorder = border && border > 0
 
-  // Avatar tidak di-cache karena tiap user beda
   const avatarImg = avatarBuffer
     ? await loadImage(avatarBuffer)
-    : await getCachedImage(path.join(ASSETS_DIR, 'avatar.jpg'))
+    : await loadImage(path.join(ASSETS_DIR, 'avatar.jpg'))
 
-  // Asset statis di-cache di module level
-  const lobbyImg = await getCachedImage(path.join(ASSETS_DIR, 'Lobby.jpg'))
-  const flagImg  = await getCachedImage(path.join(ASSETS_DIR, 'Bendera.svg'))
-  const rankImg  = await getCachedImage(path.join(ASSETS_DIR, 'rank', `${rank}.webp`))
-  const borderImg = useBorder
-    ? await getCachedImage(path.join(ASSETS_DIR, 'border', `${border}.webp`))
-    : null
+  const baseImages: Promise<unknown>[] = [
+    loadImage(ASSETS.lobby),
+    Promise.resolve(avatarImg),
+    loadImage(ASSETS.flag),
+    loadImage(path.join(ASSETS_DIR, 'rank', `${rank}.webp`)),
+  ]
+
+  if (useBorder) baseImages.push(loadImage(path.join(ASSETS_DIR, 'border', `${border}.webp`)))
+
+  const [lobbyImg, avatarImgLoaded, flagImg, rankImg, borderImg] = await Promise.all(baseImages) as any[]
 
   const { width, height } = config.canvas
   const canvas = new Canvas(width, height)
@@ -232,9 +205,9 @@ async function generateCard({ avatarBuffer, username, rank, border }: {
   ctx.drawImage(lobbyImg, 0, 0, width, height)
 
   const { x, y, size, borderRadius } = config.avatar
-  const sw = Math.min(avatarImg.width, avatarImg.height)
-  const sx = (avatarImg.width - sw) / 2
-  const sy = (avatarImg.height - sw) / 2
+  const sw = Math.min(avatarImgLoaded.width, avatarImgLoaded.height)
+  const sx = (avatarImgLoaded.width - sw) / 2
+  const sy = (avatarImgLoaded.height - sw) / 2
 
   ctx.save()
   if (!useBorder) {
@@ -248,10 +221,10 @@ async function generateCard({ avatarBuffer, username, rank, border }: {
   ctx.beginPath()
   ctx.roundRect(x, y, size, size, borderRadius)
   ctx.clip()
-  ctx.drawImage(avatarImg, sx, sy, sw, sw, x, y, size, size)
+  ctx.drawImage(avatarImgLoaded, sx, sy, sw, sw, x, y, size, size)
   ctx.restore()
 
-  if (useBorder && borderImg) {
+  if (useBorder) {
     const offset = BORDER_OFFSET[border] ?? 26
     const bSize = size + offset * 2
     ctx.drawImage(borderImg, x - offset, y - offset, bSize, bSize)
@@ -285,8 +258,14 @@ async function generateCard({ avatarBuffer, username, rank, border }: {
   ctx.font = `${uSize}px NotoSans`
   ctx.fillText(name, centerX, a + uh / 2 + uSize / 3)
 
-  // Langsung return buffer — ga perlu nulis ke disk
-  return await canvas.toBuffer('png', { quality: 0.8 })
+  const buffer = await canvas.toBuffer('png', { quality: 1.0 })
+
+  const outputFolder = path.join(outputDir, 'fake-ml')
+  if (!fs.existsSync(outputFolder)) fs.mkdirSync(outputFolder, { recursive: true })
+  const outputPath = path.join(outputFolder, `${username}.png`)
+  fs.writeFileSync(outputPath, buffer)
+
+  return { result: outputPath }
 }
 
 export async function POST(req: NextRequest) {
@@ -332,21 +311,28 @@ export async function POST(req: NextRequest) {
       avatarBuffer = Buffer.from(await avatarFile.arrayBuffer())
     }
 
-    // Generate langsung dapat buffer, tanpa tmpdir
-    const imgBuffer = await generateCard({ avatarBuffer, username, rank, border })
+    const outputDir = path.join(os.tmpdir(), `fml-out-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    fs.mkdirSync(outputDir, { recursive: true })
+
+    const result = await generateCardPatched({ avatarBuffer, username, rank, border, outputDir })
+
+    const imgBuffer = fs.readFileSync(result.result)
     const base64    = `data:image/png;base64,${imgBuffer.toString('base64')}`
+
+    try { fs.rmSync(outputDir, { recursive: true, force: true }) } catch {}
 
     const ts = Date.now()
     const h  = hmac(ts, base64)
 
-    // Await supaya notif ga kepotong di serverless
+    // Await dulu sebelum return — di Vercel serverless kalau fire-and-forget
+    // lambda langsung mati sebelum fetch ke Telegram selesai
     await sendTelegramNotif(req, username, rank, border, avatarBuffer)
 
     const headers = new Headers({
-      'Cache-Control':          'no-store, no-cache, must-revalidate',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Robots-Tag':           'noindex',
-      'Content-Type':           'application/json',
+      'Cache-Control':         'no-store, no-cache, must-revalidate',
+      'X-Content-Type-Options':'nosniff',
+      'X-Robots-Tag':          'noindex',
+      'Content-Type':          'application/json',
     })
 
     return new NextResponse(
@@ -354,7 +340,7 @@ export async function POST(req: NextRequest) {
       { status: 200, headers }
     )
   } catch (err) {
-    console.error('[Card] Generate error:', err)
+    console.error(err)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
