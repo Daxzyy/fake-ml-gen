@@ -9,7 +9,9 @@ const RANK_LABELS: Record<string, string> = {
 }
 const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
 const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren']
-const BAR_TOTAL = 5
+
+// urutan clockwise: top-left(0) → top-right(1) → bottom-right(3) → bottom-left(2)
+const CLOCKWISE = [0, 1, 3, 2]
 
 function getRandomCaptcha() {
   return CAPTCHAS[Math.floor(Math.random() * CAPTCHAS.length)]
@@ -22,44 +24,24 @@ function validateEnvelope(data: { t: number; d: string; h: string }): boolean {
 }
 
 function PagePreloader({ hidden }: { hidden: boolean }) {
-  const [activeIdx, setActiveIdx] = useState(0)
-  const order = [0, 1, 3, 2]
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setActiveIdx(p => (p + 1) % 4)
-    }, 280)
+    const id = setInterval(() => setTick(p => p + 1), 280)
     return () => clearInterval(id)
   }, [])
+
+  // kotak mana yang aktif sekarang berdasarkan tick
+  const activeBox = CLOCKWISE[tick % 4]
 
   return (
     <div id="page-preloader" className={hidden ? 'hidden' : ''}>
       <div className="preloader-grid">
         {[0, 1, 2, 3].map(i => (
-          <div
-            key={i}
-            className={`box${order[activeIdx] === i ? ' active' : ''}`}
-          />
+          <div key={i} className={`box${activeBox === i ? ' active' : ''}`} />
         ))}
       </div>
       <span className="preloader-label">Loading</span>
-    </div>
-  )
-}
-
-function GenLoadingOverlay({ step }: { step: number }) {
-  const labels = ['', 'Menyiapkan canvas...', 'Render avatar...', 'Pasang rank...', 'Finishing touch...', 'Done!']
-  return (
-    <div className="gen-loading-overlay">
-      <div className="gen-loading-box">
-        <span className="gen-loading-title">Generating</span>
-        <div className="gen-bar-track">
-          {Array.from({ length: BAR_TOTAL }).map((_, i) => (
-            <div key={i} className={`gen-bar-cell${i < step ? ' filled' : ''}`} />
-          ))}
-        </div>
-        <span className="gen-loading-sub">{labels[Math.min(step, labels.length - 1)]}</span>
-      </div>
     </div>
   )
 }
@@ -74,7 +56,6 @@ export default function Home() {
   const [rank, setRank] = useState<string>('imo')
   const [border, setBorder] = useState<number>(0)
   const [loading, setLoading] = useState(false)
-  const [genStep, setGenStep] = useState(0)
   const [resultImg, setResultImg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -93,25 +74,6 @@ export default function Home() {
       return () => window.removeEventListener('load', done)
     }
   }, [])
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null
-    if (loading) {
-      setGenStep(1)
-      let s = 1
-      interval = setInterval(() => {
-        s++
-        if (s <= BAR_TOTAL - 1) {
-          setGenStep(s)
-        } else if (interval) {
-          clearInterval(interval)
-        }
-      }, 600)
-    } else {
-      setGenStep(0)
-    }
-    return () => { if (interval) clearInterval(interval) }
-  }, [loading])
 
   function playClick() {
     if (!audioRef.current) {
@@ -188,8 +150,6 @@ export default function Home() {
 
       const data = await res.json()
       if (!validateEnvelope(data)) throw new Error('Response tidak valid.')
-      setGenStep(BAR_TOTAL)
-      await new Promise(r => setTimeout(r, 350))
       setResultImg(data.d)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Gagal generate card.')
@@ -209,8 +169,6 @@ export default function Home() {
   return (
     <>
       <PagePreloader hidden={pageReady} />
-
-      {loading && <GenLoadingOverlay step={genStep} />}
 
       <div
         className="relative min-h-screen flex flex-col"
@@ -435,13 +393,22 @@ export default function Home() {
             onClick={handleClickGenerate}
             disabled={loading}
             className="btn-gold rounded-xl py-2.5 text-sm w-full"
-            style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer' }}
+            style={{ opacity: loading ? 0.75 : 1, cursor: loading ? 'wait' : 'pointer' }}
           >
             <span className="flex items-center justify-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="5,3 19,12 5,21" />
-              </svg>
-              Generate Card
+              {loading ? (
+                <>
+                  <span className="btn-spinner" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5,3 19,12 5,21" />
+                  </svg>
+                  Generate Card
+                </>
+              )}
             </span>
           </button>
 
