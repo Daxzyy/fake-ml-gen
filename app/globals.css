@@ -37,7 +37,7 @@ body::before {
   inset: 0;
   background:
     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26, 74, 122, 0.35) 0%, transparent 70%),
-    radial_gradient(ellipse 60% 40% at 80% 80%, rgba(201, 168, 76, 0.08) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(201, 168, 76, 0.08) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -99,7 +99,7 @@ body::before {
 }
 
 .rank-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .rank-card.selected {
@@ -128,7 +128,7 @@ body::before {
   color: var(--gold-light);
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
@@ -156,11 +156,11 @@ input[type="file"] {
 
 .diamond-icon {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   background: var(--gold);
   transform: rotate(45deg);
-  margin: 0 8px;
+  margin: 0 6px;
   vertical-align: middle;
 }
 
@@ -168,7 +168,7 @@ input[type="file"] {
   color: var(--gold);
   text-decoration: none;
   font-family: 'Cinzel', serif;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   letter-spacing: 0.1em;
   transition: all 0.2s;
   border-bottom: 1px solid transparent;
@@ -201,10 +201,122 @@ input[type="file"] {
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in-up {
   animation: fadeInUp 0.4s ease forwards;
+}
+
+/* ── PAGE PRELOADER ─────────────────────────────────────── */
+#page-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--blue-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#page-preloader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.preloader-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  color: var(--gold-dark);
+  text-transform: uppercase;
+}
+
+.preloader-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.preloader-grid .box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--gold-dark);
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.preloader-grid .box.active {
+  background: var(--gold);
+  border-color: var(--gold-light);
+  box-shadow: 0 0 10px rgba(201, 168, 76, 0.7);
+}
+
+/* ── CARD GENERATE LOADING BAR ──────────────────────────── */
+.gen-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(5, 13, 26, 0.82);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gen-loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 32px;
+  background: linear-gradient(135deg, rgba(13,30,53,0.98) 0%, rgba(10,22,40,0.98) 100%);
+  border: 1px solid var(--gold-dark);
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(201,168,76,0.2);
+  min-width: 200px;
+}
+
+.gen-loading-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--gold-light);
+  text-transform: uppercase;
+}
+
+.gen-bar-track {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+.gen-bar-cell {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--gold-dark);
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  flex-shrink: 0;
+}
+
+.gen-bar-cell.filled {
+  background: var(--gold);
+  border-color: var(--gold-light);
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.65);
+}
+
+.gen-loading-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
 }
