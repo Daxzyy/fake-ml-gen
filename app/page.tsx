@@ -47,128 +47,19 @@ function PagePreloader({ hidden }: { hidden: boolean }) {
   )
 }
 
-// Ganti komponen GenLoadingOverlay di app/page.tsx dengan ini:
-
 function GenLoadingOverlay({ step }: { step: number }) {
-  const labels = [
-    '', 
-    'Menyiapkan foto...', 
-    'Render avatar...', 
-    'Pasang rank & border...', 
-    'Finishing....', 
-    'Done wok!'
-  ]
-  
+  const labels = ['', 'Menyiapkan canvas...', 'Render avatar...', 'Pasang rank...', 'Finishing touch...', 'Done!']
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 9999,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'rgba(5, 13, 26, 0.92)',
-      backdropFilter: 'blur(8px)',
-    }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '20px',
-        padding: '36px 40px',
-        background: 'linear-gradient(135deg, rgba(13,30,53,0.98) 0%, rgba(10,22,40,0.98) 100%)',
-        border: '1px solid rgba(201,168,76,0.4)',
-        borderRadius: '20px',
-        boxShadow: '0 0 60px rgba(201,168,76,0.15), 0 20px 60px rgba(0,0,0,0.6)',
-        minWidth: '260px',
-        maxWidth: '320px',
-        width: '90vw',
-      }}>
-        {/* Spinner */}
-        <div style={{ position: 'relative', width: 64, height: 64 }}>
-          <svg viewBox="0 0 64 64" width="64" height="64" style={{ animation: 'spin 1.2s linear infinite' }}>
-            <circle
-              cx="32" cy="32" r="26"
-              fill="none"
-              stroke="rgba(201,168,76,0.15)"
-              strokeWidth="4"
-            />
-            <circle
-              cx="32" cy="32" r="26"
-              fill="none"
-              stroke="#c9a84c"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeDasharray="50 113"
-              strokeDashoffset="25"
-            />
-          </svg>
-          {/* ML logo placeholder center */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '20px',
-            color: '#c9a84c',
-          }}>⚔️</div>
-        </div>
-
-        {/* Title */}
-        <div style={{ textAlign: 'center' }}>
-          <p style={{
-            fontFamily: 'Cinzel, serif',
-            color: '#f0d080',
-            fontSize: '1rem',
-            fontWeight: 700,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            margin: 0,
-          }}>
-            Generating Card
-          </p>
-        </div>
-
-        {/* Progress bar cells */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+    <div className="gen-loading-overlay">
+      <div className="gen-loading-box">
+        <span className="gen-loading-title">Generating</span>
+        <div className="gen-bar-track">
           {Array.from({ length: BAR_TOTAL }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: i < step ? 32 : 24,
-                height: 6,
-                borderRadius: 999,
-                background: i < step
-                  ? 'linear-gradient(90deg, #a0722a, #f0d080)'
-                  : 'rgba(255,255,255,0.1)',
-                transition: 'all 0.4s ease',
-                boxShadow: i < step ? '0 0 8px rgba(201,168,76,0.5)' : 'none',
-              }}
-            />
+            <div key={i} className={`gen-bar-cell${i < step ? ' filled' : ''}`} />
           ))}
         </div>
-
-        {/* Step label */}
-        <p style={{
-          color: 'rgba(143,168,200,0.8)',
-          fontSize: '0.78rem',
-          fontFamily: 'Rajdhani, sans-serif',
-          margin: 0,
-          minHeight: '1.2em',
-          transition: 'opacity 0.3s',
-        }}>
-          {labels[Math.min(step, labels.length - 1)]}
-        </p>
+        <span className="gen-loading-sub">{labels[Math.min(step, labels.length - 1)]}</span>
       </div>
-
-      {/* Keyframe spin — inject sekali */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   )
 }
