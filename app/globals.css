@@ -42,6 +42,55 @@ body::before {
   z-index: 0;
 }
 
+/* ── Preloader 2×2 Clockwise ── */
+#page-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--blue-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#page-preloader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.preloader-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+  width: 52px;
+  height: 52px;
+}
+
+.preloader-grid .box {
+  border-radius: 5px;
+  background: var(--blue-border);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.preloader-grid .box.active {
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.7);
+}
+
+.preloader-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  color: var(--gold-dark);
+  text-transform: uppercase;
+}
+
+/* ── Gold border / panels ── */
 .gold-border {
   border: 1px solid var(--gold-dark);
   box-shadow: 0 0 12px rgba(201, 168, 76, 0.15), inset 0 0 12px rgba(5, 13, 26, 0.6);
@@ -91,6 +140,22 @@ body::before {
 .btn-gold:active {
   transform: translateY(1px);
   box-shadow: 0 2px 10px rgba(201, 168, 76, 0.3);
+}
+
+/* spinner inside button */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(26, 10, 0, 0.3);
+  border-top-color: #1a0a00;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
 }
 
 .rank-card {
