@@ -9,8 +9,6 @@ const RANK_LABELS: Record<string, string> = {
 }
 const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
 const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren']
-
-// urutan clockwise: top-left(0) → top-right(1) → bottom-right(3) → bottom-left(2)
 const CLOCKWISE = [0, 1, 3, 2]
 
 function getRandomCaptcha() {
@@ -31,7 +29,6 @@ function PagePreloader({ hidden }: { hidden: boolean }) {
     return () => clearInterval(id)
   }, [])
 
-  // kotak mana yang aktif sekarang berdasarkan tick
   const activeBox = CLOCKWISE[tick % 4]
 
   return (
@@ -42,6 +39,102 @@ function PagePreloader({ hidden }: { hidden: boolean }) {
         ))}
       </div>
       <span className="preloader-label">Loading</span>
+    </div>
+  )
+}
+
+function ResultModal({
+  img,
+  username,
+  onClose,
+  onDownload,
+}: {
+  img: string
+  username: string
+  onClose: () => void
+  onDownload: () => void
+}) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="panel rounded-2xl flex flex-col items-center gap-4 gold-border-bright fade-in-up"
+        style={{
+          padding: '24px 20px',
+          width: '100%',
+          maxWidth: 320,
+          boxShadow: '0 0 60px rgba(201,168,76,0.25), 0 0 120px rgba(201,168,76,0.08)',
+        }}
+      >
+        <div className="flex flex-col items-center gap-0.5 w-full">
+          <div className="flex items-center gap-1.5">
+            <div className="diamond-icon" />
+            <p className="section-title">Hasil Generate</p>
+            <div className="diamond-icon" />
+          </div>
+          <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>
+            {username || 'Card'} sudah siap 🎴
+          </p>
+        </div>
+
+        <div className="divider w-full" />
+
+        <div
+          className="pulse-gold rounded-xl overflow-hidden"
+          style={{ boxShadow: '0 8px 40px rgba(201,168,76,0.3), 0 2px 16px rgba(0,0,0,0.7)' }}
+        >
+          <img
+            src={img}
+            alt="Generated ML Card"
+            style={{ display: 'block', width: '100%', maxWidth: 220 }}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2 w-full">
+          <button onClick={onDownload} className="btn-gold rounded-xl py-2.5 w-full text-xs">
+            <span className="flex items-center justify-center gap-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7,10 12,15 17,10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download PNG
+            </span>
+          </button>
+
+          <button
+            onClick={onClose}
+            className="rounded-xl py-2 w-full text-xs"
+            style={{
+              background: 'rgba(5,13,26,0.8)',
+              border: '1px solid var(--blue-border)',
+              color: 'var(--text-secondary)',
+              fontFamily: 'Rajdhani, sans-serif',
+              cursor: 'pointer',
+            }}
+          >
+            Tutup
+          </button>
+        </div>
+
+        <a
+          href="https://wa.me/62895423300395"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="credit-link"
+          style={{ fontSize: '0.6rem', opacity: 0.6 }}
+        >
+          Made by Givy
+        </a>
+      </div>
     </div>
   )
 }
@@ -57,6 +150,7 @@ export default function Home() {
   const [border, setBorder] = useState<number>(0)
   const [loading, setLoading] = useState(false)
   const [resultImg, setResultImg] = useState<string | null>(null)
+  const [showResult, setShowResult] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [captcha, setCaptcha] = useState<string>(getRandomCaptcha)
@@ -64,9 +158,7 @@ export default function Home() {
   const [captchaError, setCaptchaError] = useState<string | null>(null)
 
   useEffect(() => {
-    const done = () => {
-      setTimeout(() => setPageReady(true), 600)
-    }
+    const done = () => setTimeout(() => setPageReady(true), 600)
     if (document.readyState === 'complete') {
       done()
     } else {
@@ -76,9 +168,7 @@ export default function Home() {
   }, [])
 
   function playClick() {
-    if (!audioRef.current) {
-      audioRef.current = new Audio('/click-ml.mp3')
-    }
+    if (!audioRef.current) audioRef.current = new Audio('/click-ml.mp3')
     const sound = audioRef.current.cloneNode() as HTMLAudioElement
     sound.play().catch(() => {})
   }
@@ -128,6 +218,7 @@ export default function Home() {
     setCaptchaInput('')
     setLoading(true)
     setResultImg(null)
+    setShowResult(false)
 
     try {
       const fd = new FormData()
@@ -151,6 +242,7 @@ export default function Home() {
       const data = await res.json()
       if (!validateEnvelope(data)) throw new Error('Response tidak valid.')
       setResultImg(data.d)
+      setShowResult(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Gagal generate card.')
     } finally {
@@ -170,22 +262,40 @@ export default function Home() {
     <>
       <PagePreloader hidden={pageReady} />
 
+      {showResult && resultImg && (
+        <ResultModal
+          img={resultImg}
+          username={username}
+          onClose={() => setShowResult(false)}
+          onDownload={handleDownload}
+        />
+      )}
+
       <div
         className="relative min-h-screen flex flex-col"
         style={{ background: 'var(--blue-deep)' }}
         onClick={playClick}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] rounded-full opacity-20"
-            style={{ background: 'radial-gradient(ellipse, #1a4a7a 0%, transparent 70%)' }} />
-          <div className="absolute bottom-0 right-0 w-[350px] h-[250px] rounded-full opacity-10"
-            style={{ background: 'radial-gradient(ellipse, #c9a84c 0%, transparent 70%)' }} />
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] rounded-full opacity-20"
+            style={{ background: 'radial-gradient(ellipse, #1a4a7a 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute bottom-0 right-0 w-[350px] h-[250px] rounded-full opacity-10"
+            style={{ background: 'radial-gradient(ellipse, #c9a84c 0%, transparent 70%)' }}
+          />
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="absolute w-px opacity-5"
+            <div
+              key={i}
+              className="absolute w-px opacity-5"
               style={{
-                left: `${12 + i * 18}%`, top: 0, bottom: 0,
+                left: `${12 + i * 18}%`,
+                top: 0,
+                bottom: 0,
                 background: 'linear-gradient(to bottom, transparent, #c9a84c, transparent)',
-              }} />
+              }}
+            />
           ))}
         </div>
 
@@ -193,12 +303,22 @@ export default function Home() {
           <div
             className="fixed inset-0 z-50 flex items-center justify-center px-4"
             style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
-            onClick={e => { if (e.target === e.currentTarget) { setShowModal(false); document.body.style.overflow = '' } }}
+            onClick={e => {
+              if (e.target === e.currentTarget) {
+                setShowModal(false)
+                document.body.style.overflow = ''
+              }
+            }}
           >
-            <div className="panel rounded-2xl p-5 w-full max-w-xs gold-border flex flex-col gap-3"
-              style={{ boxShadow: '0 0 40px rgba(201,168,76,0.2)' }}>
+            <div
+              className="panel rounded-2xl p-5 w-full max-w-xs gold-border flex flex-col gap-3"
+              style={{ boxShadow: '0 0 40px rgba(201,168,76,0.2)' }}
+            >
               <div className="text-center">
-                <p className="text-base font-bold" style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)' }}>
+                <p
+                  className="text-base font-bold"
+                  style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)' }}
+                >
                   Verifikasi Dulu 😜
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
@@ -231,7 +351,12 @@ export default function Home() {
                 <button
                   onClick={() => { setShowModal(false); document.body.style.overflow = '' }}
                   className="flex-1 rounded-xl py-2 text-xs"
-                  style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid var(--blue-border)', color: 'var(--text-secondary)' }}
+                  style={{
+                    background: 'rgba(5,13,26,0.8)',
+                    border: '1px solid var(--blue-border)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
                 >
                   Batal
                 </button>
@@ -251,8 +376,10 @@ export default function Home() {
             </span>
             <div className="diamond-icon" />
           </div>
-          <h1 className="text-xl md:text-2xl font-bold mb-0.5"
-            style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)', letterSpacing: '0.05em' }}>
+          <h1
+            className="text-xl md:text-2xl font-bold mb-0.5"
+            style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)', letterSpacing: '0.05em' }}
+          >
             Card Generator
           </h1>
           <div className="divider max-w-xs mx-auto mt-2" />
@@ -271,9 +398,12 @@ export default function Home() {
             >
               {avatarPreview ? (
                 <div className="flex flex-col items-center gap-1.5">
-                  <img src={avatarPreview} alt="avatar preview"
+                  <img
+                    src={avatarPreview}
+                    alt="avatar preview"
                     className="w-14 h-14 rounded-xl object-cover"
-                    style={{ border: '2px solid var(--gold-dark)', boxShadow: '0 0 10px rgba(201,168,76,0.3)' }} />
+                    style={{ border: '2px solid var(--gold-dark)', boxShadow: '0 0 10px rgba(201,168,76,0.3)' }}
+                  />
                   <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Klik untuk ganti</span>
                 </div>
               ) : (
@@ -329,8 +459,15 @@ export default function Home() {
                   }}
                 >
                   <img src={`/fml-assets/rank/${r}.webp`} alt={r} className="w-7 h-7 object-contain" loading="lazy" />
-                  <span className="text-center leading-tight"
-                    style={{ fontSize: '0.5rem', color: rank === r ? 'var(--gold-light)' : 'var(--text-secondary)', fontFamily: 'Cinzel, serif', letterSpacing: '0.04em' }}>
+                  <span
+                    className="text-center leading-tight"
+                    style={{
+                      fontSize: '0.5rem',
+                      color: rank === r ? 'var(--gold-light)' : 'var(--text-secondary)',
+                      fontFamily: 'Cinzel, serif',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
                     {RANK_LABELS[r]}
                   </span>
                 </button>
@@ -345,14 +482,17 @@ export default function Home() {
                 onClick={() => setBorder(0)}
                 className="border-card rounded-lg flex-shrink-0 flex flex-col items-center justify-center gap-0.5"
                 style={{
-                  width: 46, height: 46,
+                  width: 46,
+                  height: 46,
                   background: 'rgba(5,13,26,0.8)',
                   border: border === 0 ? '2px solid var(--gold)' : '1px solid var(--blue-border)',
                   boxShadow: border === 0 ? '0 0 10px rgba(201,168,76,0.5)' : 'none',
                 }}
               >
-                <div className="w-6 h-6 rounded flex items-center justify-center"
-                  style={{ border: '1.5px solid var(--gold)', background: 'transparent' }}>
+                <div
+                  className="w-6 h-6 rounded flex items-center justify-center"
+                  style={{ border: '1.5px solid var(--gold)', background: 'transparent' }}
+                >
                   <span style={{ fontSize: '0.4rem', color: 'var(--gold)', fontFamily: 'Cinzel, serif' }}>Gold</span>
                 </div>
                 <span style={{ fontSize: '0.4rem', color: 'var(--text-secondary)', fontFamily: 'Cinzel, serif' }}>Default</span>
@@ -363,7 +503,8 @@ export default function Home() {
                   onClick={() => setBorder(b)}
                   className="border-card rounded-lg"
                   style={{
-                    width: 46, height: 46,
+                    width: 46,
+                    height: 46,
                     outline: border === b ? '2px solid var(--gold)' : 'none',
                     outlineOffset: 2,
                     boxShadow: border === b ? '0 0 10px rgba(201,168,76,0.6)' : 'none',
@@ -383,8 +524,10 @@ export default function Home() {
           </section>
 
           {error && (
-            <div className="rounded-lg px-3 py-2 text-xs"
-              style={{ background: 'rgba(180,40,40,0.15)', border: '1px solid rgba(180,40,40,0.4)', color: '#f88' }}>
+            <div
+              className="rounded-lg px-3 py-2 text-xs"
+              style={{ background: 'rgba(180,40,40,0.15)', border: '1px solid rgba(180,40,40,0.4)', color: '#f88' }}
+            >
               ⚠ {error}
             </div>
           )}
@@ -412,36 +555,6 @@ export default function Home() {
             </span>
           </button>
 
-          {resultImg && (
-            <section className="fade-in-up panel rounded-xl p-3 gold-border-bright pulse-gold flex flex-col items-center gap-2.5">
-              <div className="flex items-center gap-1.5 w-full">
-                <div className="diamond-icon" />
-                <p className="section-title">Hasil Generate</p>
-                <div className="diamond-icon" />
-              </div>
-              <div className="divider w-full" />
-              <img
-                src={resultImg}
-                alt="Generated ML Card"
-                className="w-full max-w-[180px] rounded-xl"
-                style={{ boxShadow: '0 8px 40px rgba(201,168,76,0.25), 0 2px 10px rgba(0,0,0,0.6)' }}
-              />
-              <button onClick={handleDownload} className="btn-gold rounded-xl py-2 px-6 text-xs">
-                <span className="flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7,10 12,15 17,10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  Download PNG
-                </span>
-              </button>
-              <a href="https://wa.me/62895423300395" target="_blank" rel="noopener noreferrer"
-                className="credit-link" style={{ fontSize: '0.6rem', opacity: 0.7 }}>
-                Made by Givy
-              </a>
-            </section>
-          )}
         </main>
 
         <footer className="relative z-10 py-3 text-center">
