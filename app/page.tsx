@@ -8,12 +8,7 @@ const RANK_LABELS: Record<string, string> = {
   honor: 'Honor', imo: 'Imo', legend: 'Legend', mawi: 'Mawi',
 }
 const BORDERS = Array.from({ length: 16 }, (_, i) => i + 1)
-const CAPTCHAS = ['givyganteng', 'givysigma', 'givykeren']
 const CLOCKWISE = [0, 1, 3, 2]
-
-function getRandomCaptcha() {
-  return CAPTCHAS[Math.floor(Math.random() * CAPTCHAS.length)]
-}
 
 function validateEnvelope(data: { t: number; d: string; h: string }): boolean {
   if (!data.t || !data.d || !data.h) return false
@@ -149,10 +144,6 @@ export default function Home() {
   const [resultImg, setResultImg] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showModal, setShowModal] = useState(false)
-  const [captcha, setCaptcha] = useState<string>(getRandomCaptcha)
-  const [captchaInput, setCaptchaInput] = useState('')
-  const [captchaError, setCaptchaError] = useState<string | null>(null)
 
   useEffect(() => {
     const done = () => setTimeout(() => setPageReady(true), 600)
@@ -194,29 +185,13 @@ export default function Home() {
       return
     }
     setError(null)
-    setCaptcha(getRandomCaptcha())
-    setCaptchaInput('')
-    setCaptchaError(null)
-    setShowModal(true)
-    document.body.style.overflow = 'hidden'
-  }
-
-  async function handleModalConfirm() {
-    if (captchaInput.trim().toLowerCase() !== captcha) {
-      setCaptchaError('salah bro💀 masa ga mau ngakuin sih?🤭😎')
-      setCaptcha(getRandomCaptcha())
-      setCaptchaInput('')
-      return
-    }
-
-    setShowModal(false)
-    document.body.style.overflow = ''
-    setCaptchaError(null)
-    setCaptchaInput('')
     setLoading(true)
     setResultImg(null)
     setShowResult(false)
+    handleGenerate()
+  }
 
+  async function handleGenerate() {
     try {
       const fd = new FormData()
       fd.append('username', username.trim())
@@ -295,75 +270,6 @@ export default function Home() {
             />
           ))}
         </div>
-
-        {showModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
-            onClick={e => {
-              if (e.target === e.currentTarget) {
-                setShowModal(false)
-                document.body.style.overflow = ''
-              }
-            }}
-          >
-            <div
-              className="panel rounded-2xl p-5 w-full max-w-xs gold-border flex flex-col gap-3"
-              style={{ boxShadow: '0 0 40px rgba(201,168,76,0.2)' }}
-            >
-              <div className="text-center">
-                <p
-                  className="text-base font-bold"
-                  style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)' }}
-                >
-                  Verifikasi Dulu 😜
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  Buktiin kalo lu manusia yang asli
-                </p>
-              </div>
-              <div className="divider" />
-              <p className="text-sm text-center" style={{ color: 'var(--text-primary)' }}>
-                Ketik: <span style={{ color: 'var(--gold)', fontWeight: 700 }}>"{captcha}"</span>
-              </p>
-              <input
-                autoFocus
-                type="text"
-                value={captchaInput}
-                onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(null) }}
-                onKeyDown={e => { if (e.key === 'Enter') handleModalConfirm() }}
-                placeholder={captcha}
-                className="w-full rounded-lg px-3 py-2 text-sm outline-none text-center"
-                style={{
-                  background: 'rgba(5,13,26,0.8)',
-                  border: `1px solid ${captchaError ? 'rgba(180,40,40,0.6)' : 'var(--blue-border)'}`,
-                  color: 'var(--text-primary)',
-                  fontFamily: 'Rajdhani, sans-serif',
-                }}
-              />
-              {captchaError && (
-                <p className="text-xs text-center" style={{ color: '#f88' }}>{captchaError}</p>
-              )}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowModal(false); document.body.style.overflow = '' }}
-                  className="flex-1 rounded-xl py-2 text-xs"
-                  style={{
-                    background: 'rgba(5,13,26,0.8)',
-                    border: '1px solid var(--blue-border)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Batal
-                </button>
-                <button onClick={handleModalConfirm} className="btn-gold flex-1 rounded-xl py-2 text-xs">
-                  Lanjut →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         <header className="relative z-10 pt-3 pb-2 text-center">
           <div className="inline-flex items-center gap-1 mb-0.5">
