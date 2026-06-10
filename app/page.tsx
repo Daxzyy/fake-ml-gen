@@ -80,9 +80,6 @@ function ResultModal({
             <p className="section-title">Hasil Generate</p>
             <div className="diamond-icon" />
           </div>
-          <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>
-            {username || 'Card'} sudah siap 🎴
-          </p>
         </div>
 
         <div className="divider w-full" />
@@ -555,21 +552,14 @@ export default function Home() {
             </span>
           </button>
 
-        </main>
-
-        <footer className="relative z-10 py-3 text-center">
-          <div className="divider max-w-xs mx-auto mb-2" />
-          <div className="flex items-center justify-center gap-1.5 text-xs" style={{ color: 'var(--text-secondary)', fontSize: '0.6rem' }}>
-            <div className="diamond-icon" style={{ width: 4, height: 4 }} />
-            <span>Fake ML Card Generator</span>
-            <div className="diamond-icon" style={{ width: 4, height: 4 }} />
-          </div>
-          <div className="mt-1">
-            <a href="https://wa.me/62895423300395" target="_blank" rel="noopener noreferrer" className="credit-link">
+        <div className="text-center mt-1 pb-4">
+            <a href="https://wa.me/62895423300395" target="_blank" rel="noopener noreferrer" className="credit-link" style={{ fontSize: '0.6rem', opacity: 0.6 }}>
               Made by Givy
             </a>
           </div>
-        </footer>
+
+        </main>
+
       </div>
     </>
   )
