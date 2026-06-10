@@ -377,7 +377,7 @@ export default function Home() {
             className="text-xl md:text-2xl font-bold mb-0.5"
             style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold-light)', letterSpacing: '0.05em' }}
           >
-            Card Generator
+            Fake ML Card Generator
           </h1>
           <div className="divider max-w-xs mx-auto mt-2" />
         </header>
